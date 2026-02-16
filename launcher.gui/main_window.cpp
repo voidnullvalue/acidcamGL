@@ -15,217 +15,198 @@
 #include<QThread>
 #include<QLabel>
 #include<QFileDialog>
+#include<QVBoxLayout>
+#include<QHBoxLayout>
+#include<QFormLayout>
+#include<QGridLayout>
+#include<QGroupBox>
+#include<QSplitter>
+#include<QFrame>
 
 QThread *threadx;
 ServerThread *tv;
 QString application_path = ".";
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-    int offset_y = 25;
-    setFixedSize(1280, 375+500+10);
+    setMinimumSize(960, 750);
+    resize(1280, 950);
     setWindowTitle("acidcamGL - Start New Session");
     setWindowIcon(QPixmap(":/images/icon.png"));
     settings = new QSettings("LostSideDead", "acidcamGL");
-    command_stdout = new QTextEdit("acidcamGL Launcher - written by Jared Bruni", this);
-    command_stdout->setGeometry(5, 375, 1280-10, 500);
+
+    
+    QWidget *central = new QWidget(this);
+    setCentralWidget(central);
+    QVBoxLayout *mainLayout = new QVBoxLayout(central);
+    mainLayout->setContentsMargins(10, 6, 10, 10);
+    mainLayout->setSpacing(6);
+
+    
+    QHBoxLayout *cmdRow = new QHBoxLayout();
+    cmdRow->setSpacing(6);
     command = new QLineEdit("", this);
-    command->setGeometry(5, 10+offset_y, 1280-110, 30);
-    command_stdout->setReadOnly(true);
-    QString style_info = "font-size: 16px; font-family: monaco;";
-    command->setStyleSheet(style_info);
-    QLabel *temp1 = new QLabel(tr("Mode: "), this);
-    temp1->setGeometry(15, 60+offset_y, 50, 25);
-    temp1->setStyleSheet(style_info);
+    command->setReadOnly(false);
+    command->setPlaceholderText(tr("Command line arguments..."));
+    start_button = new QPushButton(tr("Launch"), this);
+    start_button->setObjectName("btnPrimary");
+    start_button->setMinimumWidth(100);
+    start_button->setMinimumHeight(32);
+    cmdRow->addWidget(command, 1);
+    cmdRow->addWidget(start_button);
+    mainLayout->addLayout(cmdRow);
+
+    
+    
+    
+    QGroupBox *sourceGrp = new QGroupBox(tr("Source"), this);
+    QGridLayout *srcGrid = new QGridLayout(sourceGrp);
+    srcGrid->setColumnStretch(1, 1);
+    srcGrid->setHorizontalSpacing(8);
+    srcGrid->setVerticalSpacing(6);
+
+    
+    srcGrid->addWidget(new QLabel(tr("Mode:")), 0, 0);
+    QWidget *modeWidget = new QWidget(this);
+    QHBoxLayout *modeLay = new QHBoxLayout(modeWidget);
+    modeLay->setContentsMargins(0, 0, 0, 0);
+    modeLay->setSpacing(8);
     mode_select = new QComboBox(this);
-    mode_select->setStyleSheet(style_info);
-    mode_select->setGeometry(60, 60+offset_y, 200, 25);
     mode_select->addItem(tr("Capture Device"));
     mode_select->addItem(tr("Input File"));
-
-    connect(mode_select, SIGNAL(currentIndexChanged(int)), this, SLOT(comboChanged_mode(int)));
-    QLabel *temp2;
-    temp2 = new QLabel(tr("Device Index: "), this);
-    temp2->setStyleSheet(style_info);
-    temp2->setGeometry(270, 60+offset_y, 140, 25);
+    mode_select->setMinimumWidth(140);
+    modeLay->addWidget(mode_select);
+    modeLay->addSpacing(6);
+    modeLay->addWidget(new QLabel(tr("Device Index:")));
     device_edit = new QLineEdit("0", this);
-    device_edit->setStyleSheet(style_info);
-    device_edit->setGeometry(270+140+10, 60+offset_y, 100, 25);
-    
-    QLabel *select_temp = new QLabel(tr("Select Shaders:"), this);
-    select_temp->setStyleSheet(style_info);
-    select_temp->setGeometry(15, 60+25+15+offset_y, 140, 20);
-    QString pwd = getShaderPath();
-    select_filters_text = new QLineEdit(pwd+"/filters", this);
-    select_filters_text->setStyleSheet(style_info);
-    select_filters_text->setGeometry(15+150+10, 60+25+10+offset_y, 250, 30);
-    select_filters = new QPushButton(tr("Select"), this);
-    select_filters->setStyleSheet(style_info);
-    select_filters->setGeometry(15+140+10+250+20, 60+25+10+offset_y,100,30);
-    select_video = new QPushButton(tr("Select"), this);
-    QLabel *select_temp1 = new QLabel(tr("Select Input: "), this);
-    select_temp1->setGeometry(5+15+140+10+250+20+60+25+10+5, 60+offset_y, 125, 20);
-    select_video->setStyleSheet(style_info);
-    select_video->setGeometry(5+15+140+10+250+20+60+25+10+5+125+5+150+5, 60+offset_y, 100, 30);
-    select_temp1->setStyleSheet(style_info);
-    select_video_text = new QLineEdit("", this);
-    select_video_text->setStyleSheet(style_info);
-    select_video_text->setGeometry(5+15+140+10+250+20+60+25+10+5+125+5, 60+offset_y, 150, 30);
-    
-    syphon_enabled = new QCheckBox(tr("Syphon Enabled"), this);
-    syphon_enabled->setStyleSheet(style_info);
-    syphon_enabled->setGeometry(5+15+140+10+250+20+60+25+10+5+125+5+150+100+10, 60+offset_y, 200, 30);
-    connect(syphon_enabled, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    device_edit->setMaximumWidth(80);
+    modeLay->addWidget(device_edit);
+    modeLay->addSpacing(6);
+    syphon_enabled = new QCheckBox(tr("Syphon"), this);
     syphon_enabled->hide();
-    
+    modeLay->addWidget(syphon_enabled);
     video_repeat = new QCheckBox(tr("Repeat"), this);
-    video_repeat->setStyleSheet(style_info);
-    video_repeat->setGeometry(5+15+140+10+250+20+60+25+10+5+125+5+150+100+10+170, 60+offset_y, 100, 30);
-    connect(video_repeat, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    modeLay->addWidget(video_repeat);
+    modeLay->addStretch();
+    srcGrid->addWidget(modeWidget, 0, 1, 1, 2);
+
     
-    connect(device_edit, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    start_button = new QPushButton(tr("Launch"), this);
-    start_button->setGeometry(1280-100, 10+offset_y, 90, 30);
-    start_button->setStyleSheet(style_info);
-    connect(start_button, SIGNAL(clicked()), this, SLOT(launchProgram()));
-    command_stdout->setStyleSheet("background-color: black; color: white; font-size: 20px; font-family: monaco; ");
-    tv = new ServerThread();
-    threadx = new QThread;
-    tv->moveToThread(threadx);
-    connect(tv, SIGNAL(Log(const QString &)), this, SLOT(Log(const QString &)));
-    connect(threadx, SIGNAL(started()), tv, SLOT(process()));
-    connect(select_filters, SIGNAL(clicked()), this, SLOT(selectShaders()));
-    connect(select_video, SIGNAL(clicked()),this, SLOT(selectVideo()));
-    threadx->start();
-   QLabel *select_temp2 = new QLabel(tr("Set Path: "), this);
-    select_temp2->setStyleSheet(style_info);
-    select_temp2->setGeometry(5+15+140+10+250+20+60+25+10+5, 60+25+10+offset_y,100,30);
-    select_path = new QPushButton(tr("Select"), this);
-    select_path->setStyleSheet(style_info);
-    select_path->setGeometry(10+5+15+10+250+125+20+60+25+10+5+125+5+150+5+5, 60+25+10+offset_y, 100, 30);
-    select_temp1->setStyleSheet(style_info);
+    srcGrid->addWidget(new QLabel(tr("Shaders:")), 1, 0);
+    QString pwd = getShaderPath();
+    select_filters_text = new QLineEdit(pwd + "/filters", this);
+    srcGrid->addWidget(select_filters_text, 1, 1);
+    select_filters = new QPushButton(tr("Select"), this);
+    srcGrid->addWidget(select_filters, 1, 2);
+
+    
+    srcGrid->addWidget(new QLabel(tr("Input:")), 2, 0);
+    select_video_text = new QLineEdit("", this);
+    srcGrid->addWidget(select_video_text, 2, 1);
+    select_video = new QPushButton(tr("Select"), this);
+    srcGrid->addWidget(select_video, 2, 2);
+
+    
+    srcGrid->addWidget(new QLabel(tr("Path:")), 3, 0);
     select_path_text = new QLineEdit("", this);
-    select_path_text->setStyleSheet(style_info);
-    select_path_text->setGeometry(10+5+15+10+125+250+20+60+25+10+5+125+5+5, 60+25+10+offset_y, 150, 25);
-    connect(select_path_text, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(select_video_text, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(select_path, SIGNAL(clicked()), this, SLOT(selectPath()));
-    QString homeLocation = QStandardPaths::locate(QStandardPaths::PicturesLocation, QString(), QStandardPaths::LocateDirectory);
-    select_path_text->setText(homeLocation+"acidcamGL_Snapshot");
+    QString homeLocation = QStandardPaths::locate(QStandardPaths::PicturesLocation,
+                                                   QString(), QStandardPaths::LocateDirectory);
+    select_path_text->setText(homeLocation + "acidcamGL_Snapshot");
+    srcGrid->addWidget(select_path_text, 3, 1);
+    select_path = new QPushButton(tr("Select"), this);
+    srcGrid->addWidget(select_path, 3, 2);
+
     
-    custom_on = new QCheckBox(tr("Custom: "), this);
-    custom_on->setStyleSheet(style_info);
-    custom_on->setGeometry(10+5+15+10+125+250+20+60+25+10+5+125+5+5+270, 60+25+10+offset_y, 75, 25);
-    
-    connect(custom_on, SIGNAL(clicked()), this, SLOT(updateCommand()));
-    
-    custom_file = new QLineEdit(tr(""), this);
-    custom_file->setStyleSheet(style_info);
-    custom_file->setGeometry(20+10+5+15+10+125+250+20+60+25+10+5+125+5+5+270+75, 60+25+10+offset_y, 130, 30);
-    
+    custom_on = new QCheckBox(tr("Custom:"), this);
+    srcGrid->addWidget(custom_on, 4, 0);
+    custom_file = new QLineEdit("", this);
+    srcGrid->addWidget(custom_file, 4, 1);
     custom_set = new QPushButton(tr("Select"), this);
-    custom_set->setStyleSheet(style_info);
-    custom_set->setGeometry(10+5+15+10+125+250+20+60+25+10+5+125+5+5+270+75+160, 60+25+10+offset_y, 95, 30);
+    srcGrid->addWidget(custom_set, 4, 2);
+
+    mainLayout->addWidget(sourceGrp);
+
     
-    connect(custom_file, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(custom_set, SIGNAL(clicked()), this, SLOT(setCustomFile()));
-    enable_cam = new QCheckBox(tr("Camera Resolution: "), this);
-    enable_cam->setStyleSheet(style_info);
-    enable_cam->setGeometry(15, 60+25+10+40+offset_y, 200, 25);
     
-    connect(enable_cam, SIGNAL(clicked()), this, SLOT(updateCommand()));
     
+    QGroupBox *displayGrp = new QGroupBox(tr("Display"), this);
+    QVBoxLayout *dispLay = new QVBoxLayout(displayGrp);
+    dispLay->setSpacing(6);
+
+    QHBoxLayout *dispRow1 = new QHBoxLayout();
+    dispRow1->setSpacing(8);
+    enable_cam = new QCheckBox(tr("Camera Resolution:"), this);
+    dispRow1->addWidget(enable_cam);
     camera_res = new QLineEdit(tr("1280x720"), this);
-    camera_res->setStyleSheet(style_info);
-    camera_res->setGeometry(215, 60+25+10+40+offset_y, 150, 30);
-    connect(camera_res, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    
-    enable_res = new QCheckBox(tr("Window Resolution: "), this);
-    enable_res->setStyleSheet(style_info);
-    enable_res->setGeometry(215+150+10+15, 60+25+10+40+offset_y, 200, 25);
-    
-    connect(enable_res, SIGNAL(clicked()), this, SLOT(updateCommand()));
-    
+    camera_res->setMaximumWidth(120);
+    dispRow1->addWidget(camera_res);
+    dispRow1->addSpacing(16);
+    enable_res = new QCheckBox(tr("Window Resolution:"), this);
+    dispRow1->addWidget(enable_res);
     window_res = new QLineEdit(tr("1280x720"), this);
-    window_res->setStyleSheet(style_info);
-    window_res->setGeometry(215+150+10+15+200, 60+25+10+40+offset_y, 150, 30);
-    connect(window_res, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    window_res->setMaximumWidth(120);
+    dispRow1->addWidget(window_res);
+    dispRow1->addStretch();
+    dispLay->addLayout(dispRow1);
+
+    QHBoxLayout *dispRow2 = new QHBoxLayout();
+    dispRow2->setSpacing(8);
     full_screen = new QCheckBox(tr("Full Screen"), this);
+    dispRow2->addWidget(full_screen);
     full_screen_resize = new QCheckBox(tr("Resize"), this);
-    full_screen->setStyleSheet(style_info);
-    full_screen_resize->setStyleSheet(style_info);
-    full_screen->setGeometry(215+150+10+15+200+150+10, 60+25+10+40+offset_y, 150, 25);
-    full_screen_resize->setGeometry(215+150+10+15+200+150+10+150, 60+25+10+40+offset_y, 150, 25);
-    monitor_ = new QLineEdit(tr("0"), this);
-    monitor_->setStyleSheet(style_info);
-    QLabel *mon_text = new QLabel(tr("Monitor: "), this);
-    mon_text->setStyleSheet(style_info);
-    mon_text->setGeometry(215+150+10+15+200+150+10+150+50+10+50, 60+25+10+40+offset_y, 100, 30);
-    monitor_->setGeometry(215+150+10+15+200+150+10+150+150+10+10+30, 60+25+10+40+offset_y, 50, 30);
-    
-    QLabel *fps_lbl = new QLabel(tr("FPS: "), this);
-    fps_lbl->setStyleSheet(style_info);
-    fps_lbl->setGeometry(215+150+10+15+200+150+10+150+150+10+10+50+40, 60+25+10+40+offset_y, 50, 30);
-    
-    fps = new QLineEdit(tr(""), this);
-    fps->setStyleSheet(style_info);
-    fps->setGeometry(215+150+10+15+200+150+10+150+150+10+10+50+60+30, 60+25+10+40+offset_y, 50, 30);
-    
-    connect(fps, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    
-    command_stdout->setReadOnly(true);
-    command->setReadOnly(false);
-    connect(full_screen, SIGNAL(clicked()), this, SLOT(updateCommand()));
-    connect(full_screen_resize, SIGNAL(clicked()), this, SLOT(updateCommand()));
-   
-    QLabel *start_lbl = new QLabel(tr("Shader: "), this);
-    start_lbl->setStyleSheet(style_info);
-    start_lbl->setGeometry(20, 135+35+offset_y, 100, 30);
-    start_shader = new QLineEdit(tr("0"), this);
-    start_shader->setGeometry(120, 135+35+offset_y, 100, 30);
-    start_shader->setStyleSheet(style_info);
-    QLabel *start_filter_lbl = new QLabel(tr("Filter: "), this);
-    start_filter_lbl->setGeometry(235, 135+35+offset_y, 100, 30);
-    start_filter_lbl->setStyleSheet(style_info);
-    start_filter = new QLineEdit(tr("0"), this);
-    start_filter->setGeometry(335, 135+35+offset_y, 100, 30);
-    start_filter->setStyleSheet(style_info);
-    QLabel *start_sec_lbl = new QLabel(tr("Start At: "), this);
-    start_sec_lbl->setGeometry(335+110, 135+35+offset_y, 100, 30);
-    start_sec_lbl->setStyleSheet(style_info);
-    start_sec = new QLineEdit(tr("0"), this);
-    start_sec->setStyleSheet(style_info);
-    start_sec->setGeometry(335+210, 135+35+offset_y, 100, 30);
+    dispRow2->addWidget(full_screen_resize);
+    dispRow2->addSpacing(16);
+    dispRow2->addWidget(new QLabel(tr("Monitor:")));
+    monitor_ = new QLineEdit("0", this);
+    monitor_->setMaximumWidth(50);
+    dispRow2->addWidget(monitor_);
+    dispRow2->addSpacing(16);
+    dispRow2->addWidget(new QLabel(tr("FPS:")));
+    fps = new QLineEdit("", this);
+    fps->setMaximumWidth(60);
+    dispRow2->addWidget(fps);
+    dispRow2->addStretch();
+    dispLay->addLayout(dispRow2);
 
-    QLabel *max_lbl = new QLabel(tr("Max Frames: "), this);
-    max_lbl->setGeometry(335+315, 135+35+offset_y, 100, 30);
-    max_lbl->setStyleSheet(style_info);
+    mainLayout->addWidget(displayGrp);
 
-    max_frames = new QLineEdit(tr("500"), this);
-    max_frames->setGeometry(335+420,135+35+offset_y,  100, 30);
-    max_frames->setStyleSheet(style_info);
     
-    connect(max_frames, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(monitor_, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(start_shader, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(start_filter, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(start_sec, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
     
+    
+    QHBoxLayout *midRow = new QHBoxLayout();
+    midRow->setSpacing(6);
+
+    
+    QGroupBox *startGrp = new QGroupBox(tr("Start"), this);
+    QFormLayout *startForm = new QFormLayout(startGrp);
+    startForm->setHorizontalSpacing(10);
+    startForm->setVerticalSpacing(6);
+    start_shader = new QLineEdit("0", this);
+    startForm->addRow(tr("Shader:"), start_shader);
+    start_filter = new QLineEdit("0", this);
+    startForm->addRow(tr("Filter:"), start_filter);
+    start_sec = new QLineEdit("0", this);
+    startForm->addRow(tr("Start At:"), start_sec);
+    max_frames = new QLineEdit("500", this);
+    startForm->addRow(tr("Max Frames:"), max_frames);
+    midRow->addWidget(startGrp);
+
+    
+    QGroupBox *recGrp = new QGroupBox(tr("Recording"), this);
+    QVBoxLayout *recLay = new QVBoxLayout(recGrp);
+    recLay->setSpacing(6);
+
+    QHBoxLayout *recRow1 = new QHBoxLayout();
+    recRow1->setSpacing(8);
     record_video = new QCheckBox(tr("Record"), this);
-    record_video->setStyleSheet(style_info);
-    record_video->setGeometry(20, 135+40+35+offset_y, 100, 30);
+    recRow1->addWidget(record_video);
     record_type = new QComboBox(this);
-    record_type->setStyleSheet(style_info);
-    record_type->setGeometry(125, 135+40+35+offset_y, 100, 30);
     record_type->addItem("x264");
     record_type->addItem("x265");
     record_type->addItem("nvenc");
     record_type->addItem("qsv");
     record_type->addItem("amf");
     record_type->addItem("videotoolbox");
-    
+    recRow1->addWidget(record_type);
     codec_select = new QComboBox(this);
-    codec_select->setStyleSheet(style_info);
-    codec_select->setGeometry(230, 135+40+35+offset_y, 140, 30);
     codec_select->addItem("Software");
     codec_select->addItem("h264_nvenc");
     codec_select->addItem("hevc_nvenc");
@@ -241,163 +222,211 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     codec_select->addItem("hevc_cuda");
     codec_select->addItem("h264_dxva2");
     codec_select->addItem("hevc_d3d11va");
-    connect(codec_select, SIGNAL(currentIndexChanged(int)), this, SLOT(updateCommand()));
-    
-    record_name = new QLineEdit(tr(""), this);
-    record_name->setStyleSheet(style_info);
-    record_name->setGeometry(380, 135+40+35+offset_y, 250, 30);
+    recRow1->addWidget(codec_select);
+    recRow1->addWidget(new QLabel(tr("CRF:")));
+    record_crf = new QLineEdit("22", this);
+    record_crf->setMaximumWidth(60);
+    recRow1->addWidget(record_crf);
+    recRow1->addStretch();
+    recLay->addLayout(recRow1);
+
+    QHBoxLayout *recRow2 = new QHBoxLayout();
+    recRow2->setSpacing(8);
+    recRow2->addWidget(new QLabel(tr("Output:")));
+    record_name = new QLineEdit("", this);
+    recRow2->addWidget(record_name, 1);
     record_set = new QPushButton(tr("Select"), this);
-    record_set->setStyleSheet(style_info);
-    record_set->setGeometry(380+260, 135+40+35+offset_y,100,30);
-    QLabel *crf_lbl = new QLabel(tr("CRF"), this);
-    crf_lbl->setStyleSheet(style_info);
-    crf_lbl->setGeometry(380+260+110, 135+40+35+offset_y, 100, 30);
-    record_crf = new QLineEdit(tr("22"), this);
-    record_crf->setStyleSheet(style_info);
-    record_crf->setGeometry(380+260+40+110, 135+40+35+offset_y, 100, 30);
+    recRow2->addWidget(record_set);
+    recLay->addLayout(recRow2);
+
+    midRow->addWidget(recGrp, 1);
+    mainLayout->addLayout(midRow);
+
     
-    connect(record_crf, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(record_name, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(record_video, SIGNAL(clicked()), this, SLOT(updateCommand()));
-    connect(record_set, SIGNAL(clicked()), this, SLOT(setOutputFile()));
-    connect(record_type, SIGNAL(currentIndexChanged(int)), this, SLOT(comboChanged_mode(int)));
     
-    QLabel *mat_lbl = new QLabel(tr("Material: "), this);
-    mat_lbl->setStyleSheet(style_info);
-    mat_lbl->setGeometry(20, 135+40+35+35+offset_y, 100, 30);
     
-    material_filename = new QLineEdit(tr(""), this);
-    material_filename->setStyleSheet(style_info);
-    material_filename->setGeometry(125, 135+40+35+35+offset_y, 200, 30);
+    QHBoxLayout *botRow = new QHBoxLayout();
+    botRow->setSpacing(6);
+
     
+    QGroupBox *mediaGrp = new QGroupBox(tr("Media && Playback"), this);
+    QVBoxLayout *mediaLay = new QVBoxLayout(mediaGrp);
+    mediaLay->setSpacing(6);
+
+    QHBoxLayout *matRow = new QHBoxLayout();
+    matRow->setSpacing(8);
+    matRow->addWidget(new QLabel(tr("Material:")));
+    material_filename = new QLineEdit("", this);
+    matRow->addWidget(material_filename, 1);
     material_set = new QPushButton(tr("Select"), this);
-    material_set->setStyleSheet(style_info);
-    material_set->setGeometry(330, 135+40+35+35+offset_y, 100, 30);
+    matRow->addWidget(material_set);
+    mediaLay->addLayout(matRow);
+
+    QHBoxLayout *plRow = new QHBoxLayout();
+    plRow->setSpacing(8);
+    plRow->addWidget(new QLabel(tr("Playlist:")));
+    playlist_file = new QLineEdit("", this);
+    plRow->addWidget(playlist_file, 1);
+    playlist_set = new QPushButton(tr("Select"), this);
+    plRow->addWidget(playlist_set);
+    mediaLay->addLayout(plRow);
+
+    QHBoxLayout *pbRow = new QHBoxLayout();
+    pbRow->setSpacing(8);
+    enable_playback = new QCheckBox(tr("Enable Playback"), this);
+    pbRow->addWidget(enable_playback);
+    pbRow->addSpacing(6);
+    pbRow->addWidget(new QLabel(tr("BPM:")));
+    enable_bpm = new QLineEdit("60", this);
+    enable_bpm->setMaximumWidth(60);
+    pbRow->addWidget(enable_bpm);
+    enable_shuffle = new QCheckBox(tr("Shuffle"), this);
+    pbRow->addWidget(enable_shuffle);
+    pbRow->addStretch();
+    mediaLay->addLayout(pbRow);
+
+    botRow->addWidget(mediaGrp, 1);
+
     
+    QGroupBox *audioGrp = new QGroupBox(tr("Filters && Audio"), this);
+    QVBoxLayout *audioLay = new QVBoxLayout(audioGrp);
+    audioLay->setSpacing(6);
+
+    QHBoxLayout *afRow = new QHBoxLayout();
+    afRow->setSpacing(8);
+    afRow->addWidget(new QLabel(tr("AutoFilter:")));
+    auto_filter = new QLineEdit("", this);
+    afRow->addWidget(auto_filter, 1);
+    auto_set = new QPushButton(tr("Select"), this);
+    afRow->addWidget(auto_set);
+    audioLay->addLayout(afRow);
+
+    QHBoxLayout *adRow = new QHBoxLayout();
+    adRow->setSpacing(8);
+    audio_disable = new QCheckBox(tr("Disable Audio"), this);
+    adRow->addWidget(audio_disable);
+    adRow->addSpacing(6);
+    adRow->addWidget(new QLabel(tr("Sensitivity:")));
+    audio_sense = new QLineEdit("25.0", this);
+    audio_sense->setMaximumWidth(60);
+    adRow->addWidget(audio_sense);
+    adRow->addSpacing(6);
+    adRow->addWidget(new QLabel(tr("Channels:")));
+    audio_channel = new QLineEdit("2", this);
+    audio_channel->setMaximumWidth(50);
+    adRow->addWidget(audio_channel);
+    adRow->addStretch();
+    audioLay->addLayout(adRow);
+
+    botRow->addWidget(audioGrp, 1);
+    mainLayout->addLayout(botRow);
+
+    
+    
+    
+    command_stdout = new QTextEdit("acidcamGL Launcher - written by Jared Bruni", this);
+    command_stdout->setReadOnly(true);
+    command_stdout->setObjectName("consoleOutput");
+    mainLayout->addWidget(command_stdout, 1);
+
+    
+    
+    
+    connect(mode_select, SIGNAL(currentIndexChanged(int)), this, SLOT(comboChanged_mode(int)));
+    connect(device_edit, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(select_filters, SIGNAL(clicked()), this, SLOT(selectShaders()));
+    connect(select_video, SIGNAL(clicked()), this, SLOT(selectVideo()));
+    connect(select_video_text, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(select_path, SIGNAL(clicked()), this, SLOT(selectPath()));
+    connect(select_path_text, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(syphon_enabled, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(video_repeat, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(custom_on, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(custom_file, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(custom_set, SIGNAL(clicked()), this, SLOT(setCustomFile()));
+    connect(enable_cam, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(camera_res, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(enable_res, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(window_res, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(full_screen, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(full_screen_resize, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(monitor_, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(fps, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(start_shader, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(start_filter, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(start_sec, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(max_frames, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(record_video, SIGNAL(clicked()), this, SLOT(updateCommand()));
+    connect(record_type, SIGNAL(currentIndexChanged(int)), this, SLOT(comboChanged_mode(int)));
+    connect(codec_select, SIGNAL(currentIndexChanged(int)), this, SLOT(updateCommand()));
+    connect(record_name, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(record_crf, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(record_set, SIGNAL(clicked()), this, SLOT(setOutputFile()));
     connect(material_set, SIGNAL(clicked()), this, SLOT(setMatPath()));
     connect(material_filename, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    
-    QLabel *playlist_lbl = new QLabel(tr("Playlist: "), this);
-    playlist_lbl->setStyleSheet(style_info);
-    playlist_lbl->setGeometry(20, 135+40+35+35+35+offset_y, 100, 30);
-    
-    playlist_file = new QLineEdit(tr(""), this);
-    playlist_file->setStyleSheet(style_info);
-    playlist_file->setGeometry(125, 135+40+35+35+35+offset_y, 200, 30);
-    
-    playlist_set = new QPushButton(tr("Select"), this);
-    playlist_set->setStyleSheet(style_info);
-    playlist_set->setGeometry(330, 135+40+35+35+35+offset_y, 100, 30);
-    
     connect(playlist_file, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    
     connect(playlist_set, SIGNAL(clicked()), this, SLOT(setPlaylistPath()));
-    
-    enable_playback = new QCheckBox(tr("Enable Playback"), this);
-    enable_playback->setStyleSheet(style_info);
-    enable_playback->setGeometry(440, 135+40+35+35+35+offset_y,200, 30);
-    
-    QLabel *ebpm_lbl = new QLabel(tr("Beats per Minute: "), this);
-    ebpm_lbl->setStyleSheet(style_info);
-    ebpm_lbl->setGeometry(550+100, 135+40+35+35+35+offset_y, 200, 30);
-    
-    enable_bpm = new QLineEdit(tr("60"), this);
-    enable_bpm->setStyleSheet(style_info);
-    enable_bpm->setGeometry(660+170, 135+40+35+35+35+offset_y, 50, 30);
-    
-    enable_shuffle = new QCheckBox(tr("Shuffle"), this);
-    enable_shuffle->setStyleSheet(style_info);
-    enable_shuffle->setGeometry(660+170+60, 135+40+35+35+35+offset_y, 100, 30);
-    
-    connect(enable_bpm, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    
     connect(enable_playback, SIGNAL(clicked()), this, SLOT(updateCommand()));
-    
+    connect(enable_bpm, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
     connect(enable_shuffle, SIGNAL(clicked()), this, SLOT(updateCommand()));
-    
-    QLabel *auto_lbl = new QLabel(tr("AutoFilter"), this);
-    auto_lbl->setStyleSheet(style_info);
-    auto_lbl->setGeometry(20, 135+40+35+35+35+35+offset_y, 100, 30);
-    
-    auto_filter = new QLineEdit(tr(""), this);
-    auto_filter->setStyleSheet(style_info);
-    auto_filter->setGeometry(125, 135+40+35+35+35+35+offset_y, 200, 30);
-    
-    auto_set = new QPushButton(tr("Select"), this);
-    auto_set->setStyleSheet(style_info);
-    auto_set->setGeometry(330, 135+40+35+35+35+35+offset_y, 100, 30);
-    
-    audio_disable = new QCheckBox(tr("Disable Audio"), this);
-    audio_disable->setStyleSheet(style_info);
-    audio_disable->setGeometry(440,135+40+35+35+35+35+offset_y, 200, 30);
-    
-    QLabel *sense_txt = new QLabel(tr("Audio Sensitivity:"), this);
-    sense_txt->setStyleSheet(style_info);
-    sense_txt->setGeometry(550+100,135+40+35+35+35+35+offset_y,200, 30);
-    
-    audio_sense = new QLineEdit("25.0",this);
-    audio_sense->setStyleSheet(style_info);
-    audio_sense->setGeometry(660+170,135+40+35+35+35+35+offset_y,50, 30);
-    QLabel *chan_txt = new QLabel(tr("Input Channels:"), this);
-    chan_txt->setStyleSheet(style_info);
-    chan_txt->setGeometry(660+170+60,135+40+35+35+35+35+offset_y,200,30);
-
-    audio_channel = new QLineEdit("2", this);
-    audio_channel->setStyleSheet(style_info);
-    audio_channel->setGeometry(660+170+60+150,135+40+35+35+35+35+offset_y,50, 30);
- 
-    connect(audio_channel, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    connect(audio_sense, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-
+    connect(auto_filter, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(auto_set, SIGNAL(clicked()), this, SLOT(setAutoFilter()));
     connect(audio_disable, SIGNAL(clicked()), this, SLOT(setAudioDisable()));
+    connect(audio_sense, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(audio_channel, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
+    connect(start_button, SIGNAL(clicked()), this, SLOT(launchProgram()));
+
     audio_disable->setChecked(true);
     audio_channel->setEnabled(false);
     audio_sense->setEnabled(false);
+
     
-    connect(auto_filter, SIGNAL(editingFinished()), this, SLOT(updateCommand()));
-    
-    connect(auto_set, SIGNAL(clicked()), this, SLOT(setAutoFilter()));
+    tv = new ServerThread();
+    threadx = new QThread;
+    tv->moveToThread(threadx);
+    connect(tv, SIGNAL(Log(const QString &)), this, SLOT(Log(const QString &)));
+    connect(threadx, SIGNAL(started()), tv, SLOT(process()));
+    threadx->start();
+
     
     file_menu = menuBar()->addMenu(tr("&File"));
     run_menu = menuBar()->addMenu(tr("&Run"));
     help_menu = menuBar()->addMenu(tr("Help"));
- 
+
     file_options = new QAction(tr("Options"), this);
     file_options->setShortcut(tr("Ctrl+O"));
     file_menu->addAction(file_options);
-    
-    connect(file_options, SIGNAL(triggered()),this, SLOT(menu_Options()));
-    
+    connect(file_options, SIGNAL(triggered()), this, SLOT(menu_Options()));
+
     open_auto = new QAction(tr("AutoFilter Editor"), this);
     file_menu->addAction(open_auto);
-    
     connect(open_auto, SIGNAL(triggered()), this, SLOT(menu_Auto()));
-    
+
     file_exit = new QAction(tr("E&xit"), this);
     file_exit->setShortcut(tr("Ctrl+X"));
     file_menu->addAction(file_exit);
-   
+
     help_about = new QAction(tr("About"), this);
     help_about->setShortcut(tr("Ctrl+A"));
     help_menu->addAction(help_about);
-    
+
     run_exec = new QAction(tr("Execute"), this);
     run_exec->setShortcut(tr("Ctrl+E"));
     run_menu->addAction(run_exec);
-    
+
     connect(file_exit, SIGNAL(triggered()), this, SLOT(menu_Exit()));
     connect(help_about, SIGNAL(triggered()), this, SLOT(menu_About()));
     connect(run_exec, SIGNAL(triggered()), this, SLOT(launchProgram()));
-    
+
     options_window = new Options(this);
     options_window->settings = settings;
     options_window->hide();
     options_window->load();
-    
+
     auto_window = new Auto(this);
     auto_window->settings = settings;
     auto_window->hide();
-    
+
     load();
     updateCommand();
 }
@@ -408,16 +437,19 @@ MainWindow::~MainWindow() {
 
 void MainWindow::menu_About() {
     QMessageBox qbox;
-    
-    QString v = "acidcamGL Launcher v" + QString(GUI_VERSION) + "\nSoftware Programmed by Jared Bruni\n(C) 2022 LostSideDead Software\nVisit me online @: https://lostsidedead.biz\n\n\nThis Software is dedicated to all the people who experience mental illness.";
-    
+    QString v = "acidcamGL Launcher v" + QString(GUI_VERSION)
+                + "\nSoftware Programmed by Jared Bruni"
+                + "\n(C) 2022 LostSideDead Software"
+                + "\nVisit me online @: https://lostsidedead.biz"
+                + "\n\n\nThis Software is dedicated to all the people who experience mental illness.";
     qbox.setText(tr(v.toStdString().c_str()));
     QPixmap pixmap = QPixmap(":/images/icon.png");
     QPixmap spix = pixmap.scaled(64, 64);
     qbox.setIconPixmap(spix);
-    qbox.setWindowTitle(tr("About this Softwaare"));
+    qbox.setWindowTitle(tr("About this Software"));
     qbox.exec();
 }
+
 void MainWindow::menu_Exit() {
     QCoreApplication::quit();
 }
@@ -442,8 +474,6 @@ void MainWindow::load() {
         start_filter->setText(settings->value("opt_start_fi", "0").toString());
         start_sec->setText(settings->value("opt_start_sec", "0").toString());
         material_filename->setText(settings->value("opt_material_filename", "").toString());
-        //playlist_file->setText(settings->value("opt_playlist", "").toString());
-        //auto_filter->setText(settings->value("opt_autofilter", "").toString());
         custom_file->setText(settings->value("opt_custom", "").toString());
         monitor_->setText(settings->value("opt_monitor", "0").toString());
         fps->setText(settings->value("opt_fps", "0").toString());
@@ -462,11 +492,9 @@ void MainWindow::save() {
         settings->setValue("opt_camera_res", camera_res->text());
         settings->setValue("opt_window_res", window_res->text());
         settings->setValue("opt_start_sh", start_shader->text());
-        settings->setValue("opt_start_fi",  start_filter->text());
+        settings->setValue("opt_start_fi", start_filter->text());
         settings->setValue("opt_start_sec", start_sec->text());
         settings->setValue("opt_material_filename", material_filename->text());
-        //settings->setValue("opt_playlist", playlist_file->text());
-        //settings->setValue("opt_autofilter", auto_filter->text());
         settings->setValue("opt_custom", custom_file->text());
         settings->setValue("opt_monitor", monitor_->text());
         settings->setValue("opt_fps", fps->text());
@@ -482,10 +510,8 @@ QString MainWindow::getShaderPath() {
     return exeDir;
 }
 
-
 QProcess *acidcam_process = nullptr;
 
-// Modify launchProgram()
 void MainWindow::launchProgram() {
     Log(tr("\nacidcamGL Launcher - Executing ...\n"));
     QString cmd_string;
@@ -493,7 +519,7 @@ void MainWindow::launchProgram() {
     QString exePath = QCoreApplication::applicationFilePath();
     cmd_string = exePath + "/acidcamGL ";
 #else
-    cmd_string ="acidcamGL ";
+    cmd_string = "acidcamGL ";
 #endif
     if(options_window->exec_enable->isChecked())
         cmd_string = options_window->exec_path->text() + " ";
@@ -534,9 +560,9 @@ void MainWindow::launchProgram() {
     QStringList arguments;
 
 #ifdef __APPLE__
-QFileInfo fi(QCoreApplication::applicationFilePath());
-QString exeDir = fi.absolutePath();
-program = exeDir + "/acidcamGL";
+    QFileInfo fi(QCoreApplication::applicationFilePath());
+    QString exeDir = fi.absolutePath();
+    program = exeDir + "/acidcamGL";
 #else
     program = "acidcamGL";
 #endif
@@ -566,39 +592,37 @@ void MainWindow::Log(const QString &text) {
 }
 
 void MainWindow::selectShaders() {
-    
     QString dir_path = settings->value("dir_shaders", "").toString();
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Shaders Directory"),dir_path,QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    
-    if(dir.length()>0) {
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Shaders Directory"),
+                  dir_path, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if(dir.length() > 0) {
         select_filters_text->setText(dir);
-        settings->setValue("dir_shaders",dir);
+        settings->setValue("dir_shaders", dir);
     }
     updateCommand();
 }
 
 void MainWindow::selectPath() {
     QString dir_path = settings->value("dir_path1", "").toString();
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Shaders Directory"),dir_path,QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
-    if(dir.length()>0) {
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Snapshot Directory"),
+                  dir_path, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if(dir.length() > 0) {
         select_path_text->setText(dir);
-        settings->setValue("dir_path1",dir);
+        settings->setValue("dir_path1", dir);
     }
     updateCommand();
 }
 
 void MainWindow::setMatPath() {
     QString dir_path = settings->value("dir_path2", "").toString();
-    QString name = QFileDialog::getOpenFileName(this,tr("Open Video/Image"), dir_path, tr("Image/Video Files (*.mov *.mp4 *.mkv *.avi *.m4v *.jpg *.png *.bmp *.tif)"));
+    QString name = QFileDialog::getOpenFileName(this, tr("Open Video/Image"), dir_path,
+                   tr("Image/Video Files (*.mov *.mp4 *.mkv *.avi *.m4v *.jpg *.png *.bmp *.tif)"));
     if(name.length() > 0) {
         material_filename->setText(name);
         std::string val = name.toStdString();
         auto pos = val.rfind("/");
-        if(pos == std::string::npos)
-            pos = val.rfind("\\");
-        if(pos != std::string::npos) {
-            val = val.substr(0, pos);
-        }
+        if(pos == std::string::npos) pos = val.rfind("\\");
+        if(pos != std::string::npos) val = val.substr(0, pos);
         settings->setValue("dir_path2", val.c_str());
     }
     updateCommand();
@@ -606,16 +630,14 @@ void MainWindow::setMatPath() {
 
 void MainWindow::setPlaylistPath() {
     QString dir_path = settings->value("dir_path3", "").toString();
-    QString name = QFileDialog::getOpenFileName(this,tr("Open Playlist"), dir_path, tr("Playlist Files (*.key)"));
+    QString name = QFileDialog::getOpenFileName(this, tr("Open Playlist"), dir_path,
+                   tr("Playlist Files (*.key)"));
     if(name.length() > 0) {
         playlist_file->setText(name);
         std::string val = name.toStdString();
         auto pos = val.rfind("/");
-        if(pos == std::string::npos)
-            pos = val.rfind("\\");
-        if(pos != std::string::npos) {
-            val = val.substr(0, pos);
-        }
+        if(pos == std::string::npos) pos = val.rfind("\\");
+        if(pos != std::string::npos) val = val.substr(0, pos);
         settings->setValue("dir_path3", val.c_str());
     }
     updateCommand();
@@ -634,15 +656,13 @@ void MainWindow::setAudioDisable() {
 
 void MainWindow::setAutoFilter() {
     QString dir_path = settings->value("dir_path4", "").toString();
-    QString name = QFileDialog::getOpenFileName(this,tr("Open Autofilter"), dir_path, tr("Autofilter Files (*.af)"));
+    QString name = QFileDialog::getOpenFileName(this, tr("Open Autofilter"), dir_path,
+                   tr("Autofilter Files (*.af)"));
     if(name.length() > 0) {
         std::string val = name.toStdString();
         auto pos = val.rfind("/");
-        if(pos == std::string::npos)
-            pos = val.rfind("\\");
-        if(pos != std::string::npos) {
-            val = val.substr(0, pos);
-        }
+        if(pos == std::string::npos) pos = val.rfind("\\");
+        if(pos != std::string::npos) val = val.substr(0, pos);
         settings->setValue("dir_path4", val.c_str());
         auto_filter->setText(name);
     }
@@ -651,15 +671,13 @@ void MainWindow::setAutoFilter() {
 
 void MainWindow::setOutputFile() {
     QString dir_path = settings->value("dir_path5", "").toString();
-    QString name = QFileDialog::getSaveFileName(this,tr("Open Video"), dir_path, tr("Video Files (*.mp4 *.mkv *.m4v *.mov)"));
+    QString name = QFileDialog::getSaveFileName(this, tr("Open Video"), dir_path,
+                   tr("Video Files (*.mp4 *.mkv *.m4v *.mov)"));
     if(name.length() > 0) {
         std::string val = name.toStdString();
         auto pos = val.rfind("/");
-        if(pos == std::string::npos)
-            pos = val.rfind("\\");
-        if(pos != std::string::npos) {
-            val = val.substr(0, pos);
-        }
+        if(pos == std::string::npos) pos = val.rfind("\\");
+        if(pos != std::string::npos) val = val.substr(0, pos);
         settings->setValue("dir_path5", val.c_str());
         record_name->setText(name);
     }
@@ -668,8 +686,9 @@ void MainWindow::setOutputFile() {
 
 void MainWindow::setCustomFile() {
     QString dir_path = settings->value("dir_path7", "").toString();
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Custom Index Directory"),dir_path,QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if(dir.length()>0) {
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Select Custom Index Directory"),
+                  dir_path, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if(dir.length() > 0) {
         custom_file->setText(dir);
         settings->setValue("dir_path7", dir);
     }
@@ -678,15 +697,13 @@ void MainWindow::setCustomFile() {
 
 void MainWindow::selectVideo() {
     QString dir_path = settings->value("dir_path6", "").toString();
-    QString name = QFileDialog::getOpenFileName(this,tr("Open Video"), dir_path, tr("Image/Video Files (*.mov *.mp4 *.mkv *.avi *.m4v *.jpg *.png *.bmp *.tif)"));
+    QString name = QFileDialog::getOpenFileName(this, tr("Open Video"), dir_path,
+                   tr("Image/Video Files (*.mov *.mp4 *.mkv *.avi *.m4v *.jpg *.png *.bmp *.tif)"));
     if(name.length() > 0) {
         std::string val = name.toStdString();
         auto pos = val.rfind("/");
-        if(pos == std::string::npos)
-            pos = val.rfind("\\");
-        if(pos != std::string::npos) {
-            val = val.substr(0, pos);
-        }
+        if(pos == std::string::npos) pos = val.rfind("\\");
+        if(pos != std::string::npos) val = val.substr(0, pos);
         settings->setValue("dir_path6", val.c_str());
         select_video_text->setText(name);
     }
@@ -706,15 +723,16 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     if (acidcam_process != nullptr && acidcam_process->state() == QProcess::Running) {
         acidcam_process->terminate();
         if (!acidcam_process->waitForFinished(10000)) {
-            acidcam_process->kill(); 
+            acidcam_process->kill();
         }
     }
-    QMainWindow::closeEvent(event); 
+    QMainWindow::closeEvent(event);
 }
 
 void MainWindow::comboChanged_mode(int) {
     updateCommand();
 }
+
 void MainWindow::updateCommand() {
     cmd_list.clear();
     cmd_list << "-P";
@@ -745,22 +763,22 @@ void MainWindow::updateCommand() {
                 }
             }
         }
-    } else if(mode_select->currentIndex()==1) {
+    } else if(mode_select->currentIndex() == 1) {
         device_edit->setEnabled(false);
-        
+
         if(video_repeat->isChecked()) {
             cmd_list << "-R";
         }
-        
-        if(select_video_text->text().length()>0) {
+
+        if(select_video_text->text().length() > 0) {
             cmd_list << "-i";
             cmd_list << QString("\"") + select_video_text->text() + "\"";
         }
-    } else if(mode_select->currentIndex()==2) {
+    } else if(mode_select->currentIndex() == 2) {
         cmd_list << "-G";
     }
-    
-    if(select_path_text->text().length()>0) {
+
+    if(select_path_text->text().length() > 0) {
         cmd_list << "-e";
         cmd_list << QString("\"") + select_path_text->text() + "\"";
     }
@@ -775,7 +793,7 @@ void MainWindow::updateCommand() {
             }
         }
     }
-    
+
     if(syphon_enabled->isChecked()) {
         cmd_list << "-Y";
     }
@@ -794,11 +812,11 @@ void MainWindow::updateCommand() {
         cmd_list << "-S" << start_filter->text();
     if(start_sec->text() != "0")
         cmd_list << "-7" << start_sec->text();
-    
+
     if(record_video->isChecked() && record_name->text() != "") {
         int codec_idx = codec_select->currentIndex();
         QString hw_codec = "";
-        
+
         if(codec_idx == 0) {
             if(record_type->currentIndex() == 0) {
                 cmd_list << "-4";
@@ -809,46 +827,46 @@ void MainWindow::updateCommand() {
             hw_codec = codec_select->currentText();
             cmd_list << "-E" << hw_codec;
         }
-        
+
         cmd_list << "-o";
-        cmd_list << QString("\"") + record_name->text() + "\"";  
+        cmd_list << QString("\"") + record_name->text() + "\"";
         cmd_list << "-m" << record_crf->text();
     }
-    
+
     if(material_filename->text() != "") {
         cmd_list << "-T";
         QString filename = QString("\"") + material_filename->text() + "\"";
         cmd_list << filename;
     }
-    
+
     if(playlist_file->text() != "") {
         cmd_list << "-L" << (QString("\"") + playlist_file->text() + "\"");
     }
-    
+
     if(enable_playback->isChecked() && playlist_file->text() != "") {
         cmd_list << "-B";
-        
+
         if(enable_shuffle->isChecked())
             cmd_list << "-q";
-        
+
         cmd_list << "-w" << enable_bpm->text();
     }
-    
+
     if(auto_filter->text() != "") {
         cmd_list << "-A" << QString("\"") + auto_filter->text() + "\"";
     }
-    
+
     if(custom_on->isChecked() && custom_file->text() != "") {
         cmd_list << "-W" << QString("\"") + custom_file->text() + "\"";
     }
-    
+
     if(audio_disable->isChecked()) {
         cmd_list << "-y";
     } else {
         cmd_list << "-V" << audio_sense->text();
         cmd_list << "-I" << audio_channel->text();
     }
-    cmd_list << "-8"  << max_frames->text();
+    cmd_list << "-8" << max_frames->text();
 
     if(fps->text() != "") {
         cmd_list << "-u" << fps->text();
@@ -858,6 +876,6 @@ void MainWindow::updateCommand() {
     for(int i = 0; i < cmd_list.size(); ++i) {
         buf += cmd_list.at(i) + " ";
     }
-    
+
     command->setText(buf);
 }

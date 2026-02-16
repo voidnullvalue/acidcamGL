@@ -3,73 +3,66 @@
 #include<fstream>
 #include<QFileDialog>
 #include<QTextStream>
+#include<QVBoxLayout>
+#include<QHBoxLayout>
+#include<QFormLayout>
 
 Auto::Auto(QWidget *parent) : QDialog(parent) {
-    setFixedSize(640, 440);
+    setMinimumSize(450, 350);
+    resize(640, 480);
     setWindowTitle("AutoFilter - Editor");
     setWindowIcon(QPixmap(":/images/icon.png"));
     createControls();
 }
 
 void Auto::createControls() {
-    
-    QString style_info = "font-size: 16px; font-family: monaco;";
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(12, 12, 12, 12);
+    mainLayout->setSpacing(8);
+
     
     box = new QListWidget(this);
-    box->setGeometry(15,25,640-15-15,200);
-    box->setStyleSheet(style_info);
+    mainLayout->addWidget(box, 1);
+
     
-    QLabel *shader_label = new QLabel(tr("Shader: "), this);
-    shader_label->setGeometry(25, 250, 75, 30);
-    shader_label->setStyleSheet(style_info);
-    
-    
+    QFormLayout *inputForm = new QFormLayout();
+    inputForm->setHorizontalSpacing(10);
+    inputForm->setVerticalSpacing(6);
     in_shader = new QLineEdit("acidcam.glsl", this);
-    in_shader->setGeometry(115, 250, 250, 30);
-    in_shader->setStyleSheet(style_info);
-   
-    QLabel *filter_label = new QLabel(tr("Filter: "), this);
-    filter_label->setGeometry(25, 255+25, 75, 30);
-    filter_label->setStyleSheet(style_info);
-  
+    inputForm->addRow(tr("Shader:"), in_shader);
     in_filter = new QLineEdit("No Filter", this);
-    in_filter->setGeometry(115, 255+25, 250, 30);
-    in_filter->setStyleSheet(style_info);
-    
-    QLabel *frames_label = new QLabel(tr("Frames: "), this);
-    frames_label->setGeometry(25, 255+25+30+5, 75, 30);
-    frames_label->setStyleSheet(style_info);
-  
+    inputForm->addRow(tr("Filter:"), in_filter);
     in_frames = new QLineEdit("10", this);
-    in_frames->setGeometry(115, 255+25+30+5, 250, 30);
-    in_frames->setStyleSheet(style_info);
+    inputForm->addRow(tr("Frames:"), in_frames);
+    mainLayout->addLayout(inputForm);
+
     
+    QHBoxLayout *actionRow = new QHBoxLayout();
+    actionRow->setSpacing(6);
     auto_add = new QPushButton(tr("Add"), this);
-    auto_add->setGeometry(25, 255+25+30+5+35, 100, 30);
-    auto_add->setStyleSheet(style_info);
-    
+    actionRow->addWidget(auto_add);
     auto_remove = new QPushButton(tr("Remove"), this);
-    auto_remove->setGeometry(25+105+5, 255+25+30+5+35, 100, 30);
-    auto_remove->setStyleSheet(style_info);
-    
+    actionRow->addWidget(auto_remove);
     auto_insert = new QPushButton(tr("Insert"), this);
-    auto_insert->setGeometry(25+105+105+10, 255+25+30+5+35, 100, 30);
-    auto_insert->setStyleSheet(style_info);
+    actionRow->addWidget(auto_insert);
+    actionRow->addStretch();
+    mainLayout->addLayout(actionRow);
+
     
+    QHBoxLayout *fileRow = new QHBoxLayout();
+    fileRow->setSpacing(6);
     auto_save = new QPushButton(tr("Save"), this);
-    auto_save->setGeometry(25, 255+25+30+35+35+5, 100, 30);
-    auto_save->setStyleSheet(style_info);
-    
+    fileRow->addWidget(auto_save);
     auto_load = new QPushButton(tr("Load"), this);
-    auto_load->setGeometry(25+105+5, 255+25+30+5+35+30+5, 100, 30);
-    auto_load->setStyleSheet(style_info);
-    
+    fileRow->addWidget(auto_load);
+    fileRow->addStretch();
+    mainLayout->addLayout(fileRow);
+
     connect(auto_add, SIGNAL(clicked()), this, SLOT(btn_Add()));
     connect(auto_remove, SIGNAL(clicked()), this, SLOT(btn_Rmv()));
     connect(auto_insert, SIGNAL(clicked()), this, SLOT(btn_Insert()));
     connect(auto_save, SIGNAL(clicked()), this, SLOT(btn_Save()));
     connect(auto_load, SIGNAL(clicked()), this, SLOT(btn_Load()));
-    
 }
 
 QString Auto::createString() {
@@ -99,52 +92,37 @@ void Auto::btn_Insert() {
 }
 
 void Auto::btn_Save() {
-    
     QString dir_path = settings->value("af_path2", "").toString();
-    
-    QString name = QFileDialog::getSaveFileName(this,tr("Save AutoFilter File"), dir_path, tr("AF Files (*.af)"));
-
+    QString name = QFileDialog::getSaveFileName(this, tr("Save AutoFilter File"),
+                   dir_path, tr("AF Files (*.af)"));
     if(name != "") {
         std::fstream file;
         file.open(name.toStdString(), std::ios::out);
-        if(!file.is_open()) {
-            return;
-        }
+        if(!file.is_open()) return;
         for(int i = 0; i < box->count(); ++i) {
             QListWidgetItem *item = box->item(i);
             file << item->text().toStdString() << "\n";
         }
         file.close();
-        
         if(name.length() > 0) {
             std::string val = name.toStdString();
             auto pos = val.rfind("/");
-            if(pos == std::string::npos)
-                pos = val.rfind("\\");
-            if(pos != std::string::npos) {
-                val = val.substr(0, pos);
-            }
+            if(pos == std::string::npos) pos = val.rfind("\\");
+            if(pos != std::string::npos) val = val.substr(0, pos);
             settings->setValue("af_path2", val.c_str());
         }
-        
     }
 }
 
 void Auto::btn_Load() {
-   
     QString dir_path = settings->value("af_path1", "").toString();
-  
-    QString name = QFileDialog::getOpenFileName(this,tr("Open AutoFilter file"), dir_path, tr("AF Files (*.af)"));
-    
+    QString name = QFileDialog::getOpenFileName(this, tr("Open AutoFilter file"),
+                   dir_path, tr("AF Files (*.af)"));
     if(name != "") {
         std::fstream file;
         file.open(name.toStdString(), std::ios::in);
-        if(!file.is_open()) {
-            return;
-        }
-        
+        if(!file.is_open()) return;
         box->clear();
-        
         while(!file.eof()) {
             std::string s;
             std::getline(file, s);
@@ -153,16 +131,11 @@ void Auto::btn_Load() {
             }
         }
         file.close();
-        
-        
         if(name.length() > 0) {
             std::string val = name.toStdString();
             auto pos = val.rfind("/");
-            if(pos == std::string::npos)
-                pos = val.rfind("\\");
-            if(pos != std::string::npos) {
-                val = val.substr(0, pos);
-            }
+            if(pos == std::string::npos) pos = val.rfind("\\");
+            if(pos != std::string::npos) val = val.substr(0, pos);
             settings->setValue("af_path1", val.c_str());
         }
     }
