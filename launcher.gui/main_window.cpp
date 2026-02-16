@@ -439,7 +439,7 @@ void MainWindow::menu_About() {
     QMessageBox qbox;
     QString v = "acidcamGL Launcher v" + QString(GUI_VERSION)
                 + "\nSoftware Programmed by Jared Bruni"
-                + "\n(C) 2022 LostSideDead Software"
+                + "\n(C) 2022-2026 LostSideDead Software"
                 + "\nVisit me online @: https://lostsidedead.biz"
                 + "\n\n\nThis Software is dedicated to all the people who experience mental illness.";
     qbox.setText(tr(v.toStdString().c_str()));

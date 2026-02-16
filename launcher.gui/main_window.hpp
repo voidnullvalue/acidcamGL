@@ -2,7 +2,7 @@
 #ifndef __MAIN_WINDOW_H_
 #define __MAIN_WINDOW_H_
 
-#define GUI_VERSION "1.3.0"
+#define GUI_VERSION "1.4.0"
 
 #include<QMainWindow>
 #include<QTextEdit>
