@@ -65,12 +65,13 @@ bool chooseMidiPort( RtMidiIn *rtmidi )
       std::cout << "  Input port #" << i << ": " << portName << '\n';
     }
 
-    do {
-      std::cout << "\nChoose a port number: ";
-      std::cin >> i;
-    } while ( i >= nPorts );
-      std::string keyHit;
-    std::getline( std::cin, keyHit );  // used to clear out stdin
+//    do {
+//      std::cout << "\nChoose a port number: ";
+      //std::cin >> i;
+//  } while ( i >= nPorts );
+      i = 0; // defualt port TODO: add argument
+    //  std::string keyHit;
+   // std::getline( std::cin, keyHit );  // used to clear out stdin
   }
 
   rtmidi->openPort( i );
@@ -91,11 +92,11 @@ RtMidi::Api chooseMidiApi()
       std::cout << "  API #" << apis[n] << ": " << RtMidi::getApiDisplayName(apis[n]) << "\n";
 
   std::cout << "\nChoose an API number: ";
-  unsigned int i;
-  std::cin >> i;
+  unsigned int i = 0;
+//  std::cin >> i;
 
-  std::string dummy;
-  std::getline( std::cin, dummy );  // used to clear out stdin
+//  std::string dummy;
+//  std::getline( std::cin, dummy );  // used to clear out stdin
 
   return static_cast< RtMidi::Api >( i );
 }
