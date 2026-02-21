@@ -7,10 +7,12 @@
 ![ScreenShot2](https://github.com/lostjared/acidcamGL/blob/master/screens/screen_linux.jpg?raw=true "screenshot2")
 
 
+# Updates
+New interface and rewrite of CMake configure files.
+
 # Motivation
 
 Just to create something that I can use to create fun video and artwork to share online.
-
 
 # macOS Apple Silicon download:
 
