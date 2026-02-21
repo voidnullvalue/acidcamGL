@@ -9,7 +9,7 @@ LDFLAGS=`pkg-config glfw3 opencv4 acidcam rtmidi rtaudio --libs` -framework Coco
 	$(CXX) $(CFLAGS) $< -c -o $@
 
 acidcamGL: $(OBJ)
-	$(CC) glad.c -c -I./include
+	$(CC) src/glad.c -c -I./include
 	$(CXX) -std=c++11 -o acidcamGL.midi $(OBJ) glad.o $(LDFLAGS)
 
 all: example
