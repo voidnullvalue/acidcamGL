@@ -3,8 +3,8 @@
 This directory is a scaffold for future documentation generation.
 
 ## Generation Plan
-- Batch tracking: BATCH_002 completed of 84 total; next is BATCH_003.
-- Coverage counts: 16 / 555 active files documented (best-effort).
+- Batch tracking: BATCH_003 completed of 84 total; next is BATCH_004.
+- Coverage counts: 24 / 555 active files documented (best-effort).
 - Skipped files: 997 deferred in low-priority/vendor-like paths (see BATCH_PLAN.md).
 - Uncertain areas: cross-file call graphs are best-effort and may be incomplete.
 
