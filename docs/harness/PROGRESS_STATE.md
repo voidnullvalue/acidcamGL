@@ -1,22 +1,22 @@
 # Harness Progress State
 
 - Total batches: **84**
-- Completed batches: **4** (`BATCH_001`, `BATCH_002`, `BATCH_003`, `BATCH_004`)
-- Next batch ID: **BATCH_005**
-- Total files documented (running): **32**
-- Total functions/methods documented (running, best-effort): **191**
+- Completed batches: **5** (`BATCH_001`, `BATCH_002`, `BATCH_003`, `BATCH_004`, `BATCH_005`)
+- Next batch ID: **BATCH_006**
+- Total files documented (running): **40**
+- Total functions/methods documented (running, best-effort): **503**
 
 ## Batch processed this run
-- Batch ID: `BATCH_004`
+- Batch ID: `BATCH_005`
 - Files processed:
-  - `source/macos-static/gl_shader.cpp`
-  - `source/macos-static/gl_shader.hpp`
-  - `source/macos-static/gl_window.cpp`
-  - `source/macos-static/gl_window.hpp`
-  - `source/macos-static/ipc_client.cpp`
-  - `source/macos-static/ipc_client.hpp`
-  - `source/macos-static/keymap.cpp`
-  - `source/macos-static/keymap.hpp`
+  - `source/macos-static/libacidcam/ac-alpha.cpp`
+  - `source/macos-static/libacidcam/ac-basic.cpp`
+  - `source/macos-static/libacidcam/ac-box.cpp`
+  - `source/macos-static/libacidcam/ac-filter10.cpp`
+  - `source/macos-static/libacidcam/ac-filter11.cpp`
+  - `source/macos-static/libacidcam/ac-filter12.cpp`
+  - `source/macos-static/libacidcam/ac-filter13.cpp`
+  - `source/macos-static/libacidcam/ac-filter14.cpp`
 - Notes: Processed exactly one scheduled batch; no batch splitting required.
 
 ## Skipped / deferred files
@@ -26,5 +26,5 @@
 - Reason: third-party/generated/platform-bundled trees are currently marked low-priority for harness coverage.
 
 ## Remaining work
-- Remaining batches: **80**
-- Remaining active files (best-effort): **523**
+- Remaining batches: **79**
+- Remaining active files (best-effort): **515**
