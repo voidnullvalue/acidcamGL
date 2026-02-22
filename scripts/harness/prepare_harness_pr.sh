@@ -37,6 +37,20 @@ fi
 
 mapfile -t changed_files < <(git status --porcelain | awk '{print $2}')
 
+if [[ "$status" == "BATCHING_COMPLETE" ]]; then
+  echo "Harness status is BATCHING_COMPLETE; skipping commit/PR preparation."
+  {
+    echo "has_changes=false"
+    echo "status=$status"
+    echo "batch_id=$batch_id"
+    echo "next_batch=$next_batch"
+    echo "remaining_batches=$remaining"
+    echo "files_documented_total=$files_documented_total"
+    echo "functions_total=$functions_total"
+  } >> "$GITHUB_OUTPUT"
+  exit 0
+fi
+
 if (( ${#changed_files[@]} == 0 )); then
   {
     echo "has_changes=false"
