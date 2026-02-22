@@ -3,10 +3,10 @@
 This directory is a scaffold for future documentation generation.
 
 ## Generation Plan
-- Batch tracking: TODO
-- Coverage counts: TODO
-- Skipped files: TODO
-- Uncertain areas: TODO
+- Batch tracking: BATCH_001 completed of 84 total; next is BATCH_002.
+- Coverage counts: 8 / 555 active files documented (best-effort).
+- Skipped files: 997 deferred in low-priority/vendor-like paths (see BATCH_PLAN.md).
+- Uncertain areas: cross-file call graphs are best-effort and may be incomplete.
 
 ## Documents
 - [Architecture](./ARCHITECTURE.md)
