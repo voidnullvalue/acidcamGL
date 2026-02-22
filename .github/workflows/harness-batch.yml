@@ -1,0 +1,13 @@
+name: Harness Batch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Placeholder message
+        run: echo "Harness batch workflow placeholder"
